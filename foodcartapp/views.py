@@ -1,32 +1,31 @@
+import json
+
 from django.http import JsonResponse
 from django.templatetags.static import static
 
-
-from .models import Product
+from .models import Customer, Order, Product
 
 
 def banners_list_api(request):
     # FIXME move data to db?
-    return JsonResponse([
-        {
-            'title': 'Burger',
-            'src': static('burger.jpg'),
-            'text': 'Tasty Burger at your door step',
-        },
-        {
-            'title': 'Spices',
-            'src': static('food.jpg'),
-            'text': 'All Cuisines',
-        },
-        {
-            'title': 'New York',
-            'src': static('tasty.jpg'),
-            'text': 'Food is incomplete without a tasty dessert',
-        }
-    ], safe=False, json_dumps_params={
-        'ensure_ascii': False,
-        'indent': 4,
-    })
+    return JsonResponse([{
+        'title': 'Burger',
+        'src': static('burger.jpg'),
+        'text': 'Tasty Burger at your door step',
+    }, {
+        'title': 'Spices',
+        'src': static('food.jpg'),
+        'text': 'All Cuisines',
+    }, {
+        'title': 'New York',
+        'src': static('tasty.jpg'),
+        'text': 'Food is incomplete without a tasty dessert',
+    }],
+                        safe=False,
+                        json_dumps_params={
+                            'ensure_ascii': False,
+                            'indent': 4,
+                        })
 
 
 def product_list_api(request):
@@ -51,12 +50,35 @@ def product_list_api(request):
             }
         }
         dumped_products.append(dumped_product)
-    return JsonResponse(dumped_products, safe=False, json_dumps_params={
-        'ensure_ascii': False,
-        'indent': 4,
-    })
+    return JsonResponse(dumped_products,
+                        safe=False,
+                        json_dumps_params={
+                            'ensure_ascii': False,
+                            'indent': 4,
+                        })
 
 
 def register_order(request):
-    # TODO это лишь заглушка
+    try:
+        raw_order = json.loads(request.body.decode())
+
+        customer = Customer.objects.create(
+            firstname=raw_order['firstname'],
+            lastname=raw_order['lastname'],
+            phone_number=raw_order['phonenumber'],
+            address=raw_order['address'],
+        )
+
+        for product in raw_order['products']:
+            order = Order(customer=customer,
+                          product=Product.objects.get(id=product['product']),
+                          quantity=product['quantity'])
+
+            order.save()
+
+    except ValueError:
+        return JsonResponse({
+            'error': 'не удалось сформировать заказ',
+        })
+
     return JsonResponse({})
