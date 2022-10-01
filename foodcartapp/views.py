@@ -1,7 +1,7 @@
-import json
-
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Customer, Order, Product
 
@@ -58,10 +58,10 @@ def product_list_api(request):
                         })
 
 
+@api_view(['POST'])
 def register_order(request):
-    try:
-        raw_order = json.loads(request.body.decode())
-
+    raw_order = request.data
+    if raw_order:
         customer = Customer.objects.create(
             firstname=raw_order['firstname'],
             lastname=raw_order['lastname'],
@@ -73,12 +73,5 @@ def register_order(request):
             order = Order(customer=customer,
                           product=Product.objects.get(id=product['product']),
                           quantity=product['quantity'])
-
             order.save()
-
-    except ValueError:
-        return JsonResponse({
-            'error': 'не удалось сформировать заказ',
-        })
-
-    return JsonResponse({})
+    return Response(raw_order)
