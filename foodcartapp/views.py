@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -61,17 +62,28 @@ def product_list_api(request):
 @api_view(['POST'])
 def register_order(request):
     raw_order = request.data
-    if raw_order:
-        customer = Customer.objects.create(
-            firstname=raw_order['firstname'],
-            lastname=raw_order['lastname'],
-            phone_number=raw_order['phonenumber'],
-            address=raw_order['address'],
-        )
-
-        for product in raw_order['products']:
-            order = Order(customer=customer,
-                          product=Product.objects.get(id=product['product']),
-                          quantity=product['quantity'])
-            order.save()
+    try:
+        if isinstance(raw_order['products'], str):
+            content = {'products: Ожидался list со значениями, но был получен "str"'}
+            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+        if raw_order['products'] is None:
+            content = {'products: Это поле не может быть пустым.'}
+            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+        if raw_order['products'] == []:
+            content = {'products: Этот список не может быть пустым'}
+            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+    except KeyError:
+        content = {'products: Обязательное поле.'}
+        return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+    customer = Customer.objects.create(
+        firstname=raw_order['firstname'],
+        lastname=raw_order['lastname'],
+        phone_number=raw_order['phonenumber'],
+        address=raw_order['address'],
+    )
+    for product in raw_order['products']:
+        order = Order(customer=customer,
+                      product=Product.objects.get(id=product['product']),
+                      quantity=product['quantity'])
+        order.save()
     return Response(raw_order)
