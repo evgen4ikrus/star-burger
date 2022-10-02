@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework import status
@@ -62,25 +63,39 @@ def product_list_api(request):
 @api_view(['POST'])
 def register_order(request):
     raw_order = request.data
-    try:
-        if isinstance(raw_order['products'], str):
-            content = {'products: Ожидался list со значениями, но был получен "str"'}
+    for fild in ['firstname', 'lastname', 'phonenumber', 'address', 'products']:
+        if fild not in raw_order.keys():
+            content = f'{fild}: Обязательное поле.'
             return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-        if raw_order['products'] is None:
-            content = {'products: Это поле не может быть пустым.'}
+        elif not raw_order[fild]:
+            content = f'{fild}: Поле не может быть пустым.'
             return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-        if raw_order['products'] == []:
-            content = {'products: Этот список не может быть пустым'}
-            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-    except KeyError:
-        content = {'products: Обязательное поле.'}
+    if not isinstance(raw_order['products'], list):
+        content = {'products: Ожидался list со значениями, но был получен другой тип'}
         return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-    customer = Customer.objects.create(
-        firstname=raw_order['firstname'],
-        lastname=raw_order['lastname'],
-        phone_number=raw_order['phonenumber'],
-        address=raw_order['address'],
-    )
+    if not isinstance(raw_order['firstname'], str):
+        content = {'firstname: Ожидалася тип string, но был ролучен другой тип.'}
+        return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+    for product in raw_order['products']:
+        try:
+            Product.objects.get(id=product['product'])
+        except ObjectDoesNotExist:
+            content = {'products: Недопустимый первичный ключ.'}
+            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    try:
+        customer = Customer(
+            firstname=raw_order['firstname'],
+            lastname=raw_order['lastname'],
+            phonenumber=raw_order['phonenumber'],
+            address=raw_order['address'],
+        )
+        customer.full_clean()
+    except ValidationError:
+        content = {'phonenumber: Введен некорректный номер телефона.'}
+        return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+    customer.save()
+
     for product in raw_order['products']:
         order = Order(customer=customer,
                       product=Product.objects.get(id=product['product']),
