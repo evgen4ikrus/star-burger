@@ -63,12 +63,12 @@ def product_list_api(request):
 @api_view(['POST'])
 def register_order(request):
     raw_order = request.data
-    for fild in ['firstname', 'lastname', 'phonenumber', 'address', 'products']:
-        if fild not in raw_order.keys():
-            content = f'{fild}: Обязательное поле.'
+    for field in ['firstname', 'lastname', 'phonenumber', 'address', 'products']:
+        if field not in raw_order.keys():
+            content = f'{field}: Обязательное поле.'
             return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-        elif not raw_order[fild]:
-            content = f'{fild}: Поле не может быть пустым.'
+        elif not raw_order[field]:
+            content = f'{field}: Поле не может быть пустым.'
             return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
     if not isinstance(raw_order['products'], list):
         content = {'products: Ожидался list со значениями, но был получен другой тип'}
