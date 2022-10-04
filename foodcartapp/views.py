@@ -1,9 +1,8 @@
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import JsonResponse
 from django.templatetags.static import static
-from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.serializers import ModelSerializer
 
 from .models import Customer, Order, Product
 
@@ -60,45 +59,37 @@ def product_list_api(request):
                         })
 
 
+class OrderSerializer(ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['product', 'quantity']
+
+
+class CustomerSerializer(ModelSerializer):
+    products = OrderSerializer(many=True, allow_empty=False)
+
+    class Meta:
+        model = Customer
+        fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
+
+
 @api_view(['POST'])
 def register_order(request):
-    raw_order = request.data
-    for fild in ['firstname', 'lastname', 'phonenumber', 'address', 'products']:
-        if fild not in raw_order.keys():
-            content = f'{fild}: Обязательное поле.'
-            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-        elif not raw_order[fild]:
-            content = f'{fild}: Поле не может быть пустым.'
-            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-    if not isinstance(raw_order['products'], list):
-        content = {'products: Ожидался list со значениями, но был получен другой тип'}
-        return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-    if not isinstance(raw_order['firstname'], str):
-        content = {'firstname: Ожидалася тип string, но был ролучен другой тип.'}
-        return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-    for product in raw_order['products']:
-        try:
-            Product.objects.get(id=product['product'])
-        except ObjectDoesNotExist:
-            content = {'products: Недопустимый первичный ключ.'}
-            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+    serializer = CustomerSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
-    try:
-        customer = Customer(
-            firstname=raw_order['firstname'],
-            lastname=raw_order['lastname'],
-            phonenumber=raw_order['phonenumber'],
-            address=raw_order['address'],
+    customer = Customer.objects.create(
+        firstname=serializer.validated_data['firstname'],
+        lastname=serializer.validated_data['lastname'],
+        phonenumber=serializer.validated_data['phonenumber'],
+        address=serializer.validated_data['address'],
+    )
+    for element in serializer.validated_data['products']:
+        product, quantity = element.values()
+        Order.objects.create(
+            customer=customer,
+            product=product,
+            quantity=quantity
         )
-        customer.full_clean()
-    except ValidationError:
-        content = {'phonenumber: Введен некорректный номер телефона.'}
-        return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
-    customer.save()
 
-    for product in raw_order['products']:
-        order = Order(customer=customer,
-                      product=Product.objects.get(id=product['product']),
-                      quantity=product['quantity'])
-        order.save()
-    return Response(raw_order)
+    return Response({})
