@@ -103,8 +103,16 @@ class ProductAdmin(admin.ModelAdmin):
 
 class OrderInline(admin.TabularInline):
     model = Order
-    fields = ('product', 'price', 'quantity')
-    readonly_fields = ['price']
+    fields = ('product', 'price', 'quantity', 'get_total_price')
+    readonly_fields = ['get_total_price']
+
+    def get_total_price(self, obj):
+        price, quantity = obj.price, obj.quantity
+        if price and quantity:
+            return price * quantity
+        return '-'
+
+    get_total_price.short_description = 'Общая цена'
 
 
 @admin.register(Customer)
