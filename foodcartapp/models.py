@@ -129,7 +129,7 @@ class CustomerQuerySet(models.QuerySet):
 
     def add_total_price(self):
         customers = self.annotate(total_price=(Sum(
-            F('orders__quantity') * F('orders__product__price'))
+            F('orders__quantity') * F('orders__price'))
             )
         )
         return customers
