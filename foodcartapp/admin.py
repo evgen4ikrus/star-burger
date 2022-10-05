@@ -103,6 +103,8 @@ class ProductAdmin(admin.ModelAdmin):
 
 class OrderInline(admin.TabularInline):
     model = Order
+    fields = ('product', 'price', 'quantity')
+    readonly_fields = ['price']
 
 
 @admin.register(Customer)

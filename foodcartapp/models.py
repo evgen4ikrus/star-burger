@@ -165,6 +165,7 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name='orders',
     )
+    price = models.DecimalField('цена товара', max_digits=8, decimal_places=2, validators=[MinValueValidator(1)])
 
     class Meta:
         verbose_name = 'элемент заказа'

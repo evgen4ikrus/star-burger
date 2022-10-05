@@ -70,7 +70,7 @@ class CustomerSerializer(ModelSerializer):
 
     class Meta:
         model = Customer
-        fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'products']
+        fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'price', 'products']
 
 
 @api_view(['POST'])
@@ -85,10 +85,14 @@ def register_order(request):
     )
     for element in serializer.validated_data['products']:
         product, quantity = element.values()
-        Order.objects.create(
+        order = Order(
             customer=customer,
             product=product,
-            quantity=quantity
+            quantity=quantity,
+            price=product.price
         )
+        order.full_clean()
+        order.save()
+
     serializer = CustomerSerializer(customer)
     return Response(serializer.data)
