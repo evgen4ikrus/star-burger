@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
 from rest_framework.decorators import api_view
@@ -70,9 +71,10 @@ class CustomerSerializer(ModelSerializer):
 
     class Meta:
         model = Customer
-        fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'price', 'products']
+        fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'products']
 
 
+@transaction.atomic
 @api_view(['POST'])
 def register_order(request):
     serializer = CustomerSerializer(data=request.data)
@@ -93,6 +95,5 @@ def register_order(request):
         )
         order.full_clean()
         order.save()
-
     serializer = CustomerSerializer(customer)
     return Response(serializer.data)
