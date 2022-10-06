@@ -136,10 +136,18 @@ class CustomerQuerySet(models.QuerySet):
 
 
 class Customer(models.Model):
+    STATUS_CHOICES = [
+        ('Необработан', 'Необработан'),
+        ('Согласован', 'Согласован'),
+        ('Собран', 'Собран'),
+        ('Доставляется', 'Доставляется'),
+        ('Выполнен', 'Выполнен')
+    ]
     firstname = models.CharField('имя', max_length=50)
     lastname = models.CharField('фамилия', max_length=80)
     phonenumber = PhoneNumberField()
     address = models.CharField('адрес', max_length=200)
+    order_status = models.CharField('статус', max_length=15, choices=STATUS_CHOICES, default='Необработан', db_index=True)
 
     objects = CustomerQuerySet.as_manager()
 
