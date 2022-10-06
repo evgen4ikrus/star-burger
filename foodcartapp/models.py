@@ -147,7 +147,14 @@ class Customer(models.Model):
     lastname = models.CharField('фамилия', max_length=80)
     phonenumber = PhoneNumberField()
     address = models.CharField('адрес', max_length=200)
-    order_status = models.CharField('статус', max_length=15, choices=STATUS_CHOICES, default='Необработан', db_index=True)
+    order_status = models.CharField(
+        'статус',
+        max_length=15,
+        choices=STATUS_CHOICES,
+        default='Необработан',
+        db_index=True
+    )
+    comment = models.TextField('комментарий', blank=True, default='')
 
     objects = CustomerQuerySet.as_manager()
 
