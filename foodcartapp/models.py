@@ -144,6 +144,8 @@ class Customer(models.Model):
         ('Доставляется', 'Доставляется'),
         ('Выполнен', 'Выполнен')
     ]
+    PAYMENT_METHODS = [('Наличностью', 'Наличностью'), ('Электронно', 'Электронно')]
+
     firstname = models.CharField('имя', max_length=50)
     lastname = models.CharField('фамилия', max_length=80)
     phonenumber = PhoneNumberField('Номер телефона')
@@ -159,6 +161,13 @@ class Customer(models.Model):
     registered_at = models.DateTimeField('заказ создан', default=timezone.now, db_index=True)
     called_at = models.DateTimeField('звонок совершен', blank=True, null=True, db_index=True)
     delivered_at = models.DateTimeField('доставлено', blank=True, null=True, db_index=True)
+    payment_method = models.CharField(
+        'Способ оплаты',
+        max_length=15,
+        choices=PAYMENT_METHODS,
+        default='Наличностью',
+        db_index=True
+    )
 
     objects = CustomerQuerySet.as_manager()
 
