@@ -135,12 +135,24 @@ class CustomerQuerySet(models.QuerySet):
         )
         return customers
 
+    def add_available_restaurants(self):
+        for order in self:
+            products = [order_elements.product for order_elements in order.orders.select_related('product')]
+            product_restaurants = {}
+            for product in products:
+                restaurants = [item.restaurant for item in product.menu_items.filter(
+                                   availability=True).select_related('restaurant')]
+                product_restaurants[product] = restaurants
+                order.restaurants = set.intersection(
+                    *[set(restaurants) for restaurants in product_restaurants.values()]
+                )
+        return self
+
 
 class Customer(models.Model):
     STATUS_CHOICES = [
         ('Необработан', 'Необработан'),
-        ('Согласован', 'Согласован'),
-        ('Собран', 'Собран'),
+        ('Готовится', 'Готовится'),
         ('Доставляется', 'Доставляется'),
         ('Выполнен', 'Выполнен')
     ]
@@ -167,6 +179,14 @@ class Customer(models.Model):
         choices=PAYMENT_METHODS,
         default='Наличностью',
         db_index=True
+    )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        verbose_name='ресторан',
+        on_delete=models.CASCADE,
+        related_name='customers',
+        blank=True,
+        null=True
     )
 
     objects = CustomerQuerySet.as_manager()

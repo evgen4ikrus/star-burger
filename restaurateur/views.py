@@ -90,7 +90,8 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Customer.objects.add_total_price().exclude(order_status='Выполнен')
+    order_items = Customer.objects.add_total_price().exclude(order_status='Выполнен').add_available_restaurants()\
+        .order_by('-order_status', 'registered_at')
     return render(request, template_name='order_items.html', context={
         'order_items': order_items
     })

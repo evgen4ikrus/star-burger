@@ -21,6 +21,7 @@
       <th>Телефон</th>
       <th>Адрес доставки</th>
       <th>Комментарий</th>
+      <th>Рестораны</th>
       <th>Ссылка на админку</th>
     </tr>
 
@@ -34,6 +35,22 @@
         <td>{{ item.phonenumber }}</td>
         <td>{{ item.address }}</td>
         <td>{{ item.comment }}</td>
+        {% if item.restaurant %}
+          <td>{{ item.restaurant }}</td>
+        {% elif item.restaurants %}
+          <td>
+            <details>
+              <summary>Может быть приготовлен ресторанами:</summary>
+              <ul>
+                {% for restaurant in item.restaurants %}
+                  <li>{{ restaurant.name }}</li>
+                {% endfor %}
+              </ul>
+            </details>
+          </td>
+        {% else %}
+          <td>Ни один из ресторанов не может приготовить</td>
+        {% endif %}
         <td><a href='{% url "admin:foodcartapp_customer_change" object_id=item.id %}?next={{ request.path|urlencode }}'>Редактировать</a></td>
       </tr>
     {% endfor %}
