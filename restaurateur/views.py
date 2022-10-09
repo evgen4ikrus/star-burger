@@ -1,3 +1,4 @@
+import requests
 from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
@@ -5,8 +6,28 @@ from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
+from geopy import distance
 
 from foodcartapp.models import Customer, Product, Restaurant
+from star_burger.settings import yandex_api_key
+
+
+def fetch_coordinates(apikey, address):
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    response = requests.get(base_url, params={
+        "geocode": address,
+        "apikey": apikey,
+        "format": "json",
+    })
+    response.raise_for_status()
+    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+    if not found_places:
+        return None
+
+    most_relevant = found_places[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lat, lon
 
 
 class Login(forms.Form):
@@ -90,8 +111,19 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Customer.objects.add_total_price().exclude(order_status='Выполнен').add_available_restaurants()\
-        .order_by('-order_status', 'registered_at')
+    order_items = Customer.objects.add_total_price().exclude(order_status='Выполнен')\
+        .order_by('-order_status', 'registered_at').add_available_restaurants()
+    for order in order_items:
+        delivery_coordinates = fetch_coordinates(yandex_api_key, order.address)
+        if delivery_coordinates:
+            order.restaurants_with_distance = {}
+            for restaurant in order.restaurants:
+                restaurant_coordinates = fetch_coordinates(yandex_api_key, restaurant.address)
+                restaurant.distance = round(distance.distance(delivery_coordinates, restaurant_coordinates).km, 1)
+                order.restaurants_with_distance[restaurant] = restaurant.distance
+            order.restaurants_with_distance = sorted(order.restaurants_with_distance.items(), key=lambda item: item[1])
+            order.restaurants_with_distance = {rest: dist for rest, dist in order.restaurants_with_distance}
+
     return render(request, template_name='order_items.html', context={
         'order_items': order_items
     })
