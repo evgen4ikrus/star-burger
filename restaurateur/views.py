@@ -115,14 +115,17 @@ def view_orders(request):
         .order_by('-order_status', 'registered_at').add_available_restaurants()
     for order in order_items:
         delivery_coordinates = fetch_coordinates(yandex_api_key, order.address)
-        if delivery_coordinates:
-            order.restaurants_with_distance = {}
-            for restaurant in order.restaurants:
-                restaurant_coordinates = fetch_coordinates(yandex_api_key, restaurant.address)
-                restaurant.distance = round(distance.distance(delivery_coordinates, restaurant_coordinates).km, 1)
-                order.restaurants_with_distance[restaurant] = restaurant.distance
-            order.restaurants_with_distance = sorted(order.restaurants_with_distance.items(), key=lambda item: item[1])
-            order.restaurants_with_distance = {rest: dist for rest, dist in order.restaurants_with_distance}
+        if not delivery_coordinates:
+            continue
+        order.restaurants_with_distance = {}
+        for restaurant in order.restaurants:
+            restaurant_coordinates = fetch_coordinates(yandex_api_key, restaurant.address)
+            if not restaurant_coordinates:
+                continue
+            restaurant.distance = round(distance.distance(delivery_coordinates, restaurant_coordinates).km, 1)
+            order.restaurants_with_distance[restaurant] = restaurant.distance
+        order.restaurants_with_distance = sorted(order.restaurants_with_distance.items(), key=lambda item: item[1])
+        order.restaurants_with_distance = {rest: dist for rest, dist in order.restaurants_with_distance}
 
     return render(request, template_name='order_items.html', context={
         'order_items': order_items
