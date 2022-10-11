@@ -5,11 +5,13 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views import View
 from geopy import distance
 
 from foodcartapp.models import Customer, Product, Restaurant
-from star_burger.settings import yandex_api_key
+from places.models import Place
+from star_burger.settings import YANDEX_API_KEY
 
 
 def fetch_coordinates(apikey, address):
@@ -109,17 +111,32 @@ def view_restaurants(request):
     })
 
 
+def get_coordinates(address, yandex_api_key):
+    place = Place.objects.filter(address__contains=address)
+    if place:
+        place = place.first()
+        return place.latitude, place.longitude
+    latitude, longitude = fetch_coordinates(yandex_api_key, address)
+    place = Place.objects.create(
+        address=address,
+        longitude=longitude,
+        latitude=latitude,
+        update_date=timezone.now()
+    )
+    return place.latitude, place.longitude
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
     order_items = Customer.objects.add_total_price().exclude(order_status='Выполнен')\
         .order_by('-order_status', 'registered_at').add_available_restaurants()
     for order in order_items:
-        delivery_coordinates = fetch_coordinates(yandex_api_key, order.address)
+        delivery_coordinates = get_coordinates(order.address, YANDEX_API_KEY)
         if not delivery_coordinates:
             continue
         order.restaurants_with_distance = {}
         for restaurant in order.restaurants:
-            restaurant_coordinates = fetch_coordinates(yandex_api_key, restaurant.address)
+            restaurant_coordinates = get_coordinates(restaurant.address, YANDEX_API_KEY)
             if not restaurant_coordinates:
                 continue
             restaurant.distance = round(distance.distance(delivery_coordinates, restaurant_coordinates).km, 1)
