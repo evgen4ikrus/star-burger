@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import user_passes_test
+from django.db.utils import IntegrityError
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -111,25 +112,39 @@ def view_restaurants(request):
     })
 
 
+def update_places(places, yandex_api_key):
+    addresses = [place.address for place in Place.objects.all()]
+    for item in places:
+        if item.address not in addresses:
+            latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
+            Place.objects.create(
+                address=item.address,
+                longitude=longitude,
+                latitude=latitude,
+                update_date=timezone.now()
+            )
+
+
 def get_coordinates(address, yandex_api_key):
-    place = Place.objects.filter(address__contains=address)
-    if place:
-        place = place.first()
-        return place.latitude, place.longitude
-    latitude, longitude = fetch_coordinates(yandex_api_key, address)
-    place = Place.objects.create(
-        address=address,
-        longitude=longitude,
-        latitude=latitude,
-        update_date=timezone.now()
-    )
+    try:
+        place = Place.objects.get(address=address)
+    except IntegrityError:
+        return None, None
     return place.latitude, place.longitude
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Customer.objects.add_total_price().exclude(order_status='Выполнен')\
-        .order_by('-order_status', 'registered_at').add_available_restaurants()
+    order_items = Customer.objects.add_total_price()\
+        .exclude(order_status='Выполнен')\
+        .prefetch_related('orders')\
+        .prefetch_related('orders__product')\
+        .order_by('-order_status', 'registered_at')\
+        .add_available_restaurants()
+    update_places(order_items, YANDEX_API_KEY)
+    restaurants = Restaurant.objects.all()
+    update_places(restaurants, YANDEX_API_KEY)
+
     for order in order_items:
         delivery_coordinates = get_coordinates(order.address, YANDEX_API_KEY)
         if not delivery_coordinates:

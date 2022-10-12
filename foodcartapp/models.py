@@ -136,16 +136,21 @@ class CustomerQuerySet(models.QuerySet):
         return customers
 
     def add_available_restaurants(self):
+        restaurant_menu_items = RestaurantMenuItem.objects.filter(availability=True)\
+            .select_related('restaurant').select_related('product')
+        restaurant_products = {}
+        for item in restaurant_menu_items:
+            if item.restaurant not in restaurant_products:
+                restaurant_products[item.restaurant] = [item.product]
+            else:
+                restaurant_products[item.restaurant].append(item.product)
         for order in self:
-            products = [order_elements.product for order_elements in order.orders.select_related('product')]
-            product_restaurants = {}
-            for product in products:
-                restaurants = [item.restaurant for item in product.menu_items.filter(
-                                   availability=True).select_related('restaurant')]
-                product_restaurants[product] = restaurants
-                order.restaurants = set.intersection(
-                    *[set(restaurants) for restaurants in product_restaurants.values()]
-                )
+            products = [order_elements.product for order_elements in order.orders.all()]
+            available_restaurants = []
+            for restaurant, menu in restaurant_products.items():
+                if set(products).issubset(menu):
+                    available_restaurants.append(restaurant)
+            order.restaurants = available_restaurants
         return self
 
 
