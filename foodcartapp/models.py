@@ -174,7 +174,7 @@ class Customer(models.Model):
         default='Не обработан',
         db_index=True
     )
-    comment = models.TextField('комментарий', blank=True, default='')
+    comment = models.TextField('комментарий', blank=True)
     registered_at = models.DateTimeField('заказ создан', default=timezone.now, db_index=True)
     called_at = models.DateTimeField('звонок совершен', blank=True, null=True, db_index=True)
     delivered_at = models.DateTimeField('доставлено', blank=True, null=True, db_index=True)
