@@ -182,7 +182,8 @@ class Customer(models.Model):
         'Способ оплаты',
         max_length=15,
         choices=PAYMENT_METHODS,
-        default='Наличностью',
+        blank=True,
+        null=True,
         db_index=True
     )
     restaurant = models.ForeignKey(
