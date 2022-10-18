@@ -154,7 +154,6 @@ class CustomerQuerySet(models.QuerySet):
         return self
 
 
-# Экземпляр данной модели хранит в себе данные о заказе. Более подходящее название для модели: "Order"
 class Customer(models.Model):
     STATUS_CHOICES = [
         ('Необработан', 'Необработан'),
@@ -205,7 +204,6 @@ class Customer(models.Model):
         return f"{self.firstname} {self.lastname} - {self.address}"
 
 
-# Экземпляр данной модели хранит в себе данные о элементе заказа. Более подходящее название для модели: "OrderElement"
 class Order(models.Model):
     product = models.ForeignKey(
         Product,
