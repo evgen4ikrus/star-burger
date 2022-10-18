@@ -156,7 +156,7 @@ class CustomerQuerySet(models.QuerySet):
 
 class Customer(models.Model):
     STATUS_CHOICES = [
-        ('Необработан', 'Необработан'),
+        ('Не обработан', 'Не обработан'),
         ('Готовится', 'Готовится'),
         ('Доставляется', 'Доставляется'),
         ('Выполнен', 'Выполнен')
@@ -171,7 +171,7 @@ class Customer(models.Model):
         'статус',
         max_length=15,
         choices=STATUS_CHOICES,
-        default='Необработан',
+        default='Не обработан',
         db_index=True
     )
     comment = models.TextField('комментарий', blank=True, default='')
