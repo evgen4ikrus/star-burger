@@ -7,7 +7,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 from star_burger import settings
 
-from .models import (Customer, Order, Product, ProductCategory, Restaurant,
+from .models import (Order, OrderElement, Product, ProductCategory, Restaurant,
                      RestaurantMenuItem)
 
 
@@ -105,8 +105,8 @@ class ProductAdmin(admin.ModelAdmin):
     get_image_list_preview.short_description = 'превью'
 
 
-class OrderInline(admin.TabularInline):
-    model = Order
+class OrderElementInline(admin.TabularInline):
+    model = OrderElement
     fields = ('product', 'price', 'quantity', 'get_total_price')
     readonly_fields = ['get_total_price']
 
@@ -119,14 +119,14 @@ class OrderInline(admin.TabularInline):
     get_total_price.short_description = 'Общая цена'
 
 
-@admin.register(Customer)
-class CustomerAdmin(admin.ModelAdmin):
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
     inlines = [
-        OrderInline,
+        OrderElementInline,
     ]
 
     def response_change(self, request, obj):
-        res = super(CustomerAdmin, self).response_change(request, obj)
+        res = super(OrderAdmin, self).response_change(request, obj)
         if "next" in request.GET:
             if url_has_allowed_host_and_scheme(request.GET['next'], allowed_hosts=settings.ALLOWED_HOSTS):
                 return HttpResponseRedirect(request.GET['next'])

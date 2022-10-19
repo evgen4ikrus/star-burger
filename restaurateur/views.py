@@ -3,14 +3,14 @@ from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import user_passes_test
-from django.db.utils import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from geopy import distance
 
-from foodcartapp.models import Customer, Product, Restaurant
+from foodcartapp.models import Order, Product, Restaurant
 from places.models import Place
 from star_burger.settings import YANDEX_API_KEY
 
@@ -26,7 +26,7 @@ def fetch_coordinates(apikey, address):
     found_places = response.json()['response']['GeoObjectCollection']['featureMember']
 
     if not found_places:
-        return None
+        return None, None
 
     most_relevant = found_places[0]
     lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
@@ -117,28 +117,29 @@ def update_places(places, yandex_api_key):
     for item in places:
         if item.address not in addresses:
             latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
-            Place.objects.create(
-                address=item.address,
-                longitude=longitude,
-                latitude=latitude,
-                update_date=timezone.now()
-            )
+            if latitude and longitude:
+                Place.objects.create(
+                    address=item.address,
+                    longitude=longitude,
+                    latitude=latitude,
+                    update_date=timezone.now()
+                )
 
 
 def get_coordinates(address, yandex_api_key):
     try:
         place = Place.objects.get(address=address)
-    except IntegrityError:
+    except ObjectDoesNotExist:
         return None, None
     return place.latitude, place.longitude
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    order_items = Customer.objects.add_total_price()\
+    order_items = Order.objects.add_total_price()\
         .exclude(order_status='Выполнен')\
-        .prefetch_related('orders')\
-        .prefetch_related('orders__product')\
+        .prefetch_related('elements')\
+        .prefetch_related('elements__product')\
         .order_by('-order_status', 'registered_at')\
         .add_available_restaurants()
     update_places(order_items, YANDEX_API_KEY)

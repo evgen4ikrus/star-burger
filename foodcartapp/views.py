@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 
-from .models import Customer, Order, Product
+from .models import OrderElement, Order, Product
 
 
 def banners_list_api(request):
@@ -60,26 +60,26 @@ def product_list_api(request):
                         })
 
 
-class OrderSerializer(ModelSerializer):
+class OrderElementSerializer(ModelSerializer):
     class Meta:
-        model = Order
+        model = OrderElement
         fields = ['product', 'quantity']
 
 
-class CustomerSerializer(ModelSerializer):
-    products = OrderSerializer(many=True, allow_empty=False, write_only=True)
+class OrderSerializer(ModelSerializer):
+    products = OrderElementSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:
-        model = Customer
+        model = Order
         fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'products']
 
 
 @transaction.atomic
 @api_view(['POST'])
 def register_order(request):
-    serializer = CustomerSerializer(data=request.data)
+    serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    customer = Customer.objects.create(
+    order = Order.objects.create(
         firstname=serializer.validated_data['firstname'],
         lastname=serializer.validated_data['lastname'],
         phonenumber=serializer.validated_data['phonenumber'],
@@ -87,13 +87,13 @@ def register_order(request):
     )
     for element in serializer.validated_data['products']:
         product, quantity = element.values()
-        order = Order(
-            customer=customer,
+        order_element = OrderElement(
+            order=order,
             product=product,
             quantity=quantity,
             price=product.price
         )
-        order.full_clean()
-        order.save()
-    serializer = CustomerSerializer(customer)
+        order_element.full_clean()
+        order_element.save()
+    serializer = OrderSerializer(order)
     return Response(serializer.data)

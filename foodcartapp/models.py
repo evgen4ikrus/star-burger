@@ -126,14 +126,14 @@ class RestaurantMenuItem(models.Model):
         return f"{self.restaurant.name} - {self.product.name}"
 
 
-class CustomerQuerySet(models.QuerySet):
+class OrderQuerySet(models.QuerySet):
 
     def add_total_price(self):
-        customers = self.annotate(total_price=(Sum(
-            F('orders__quantity') * F('orders__price'))
+        orders = self.annotate(total_price=(Sum(
+            F('elements__quantity') * F('elements__price'))
             )
         )
-        return customers
+        return orders
 
     def add_available_restaurants(self):
         restaurant_menu_items = RestaurantMenuItem.objects.filter(availability=True)\
@@ -145,7 +145,7 @@ class CustomerQuerySet(models.QuerySet):
             else:
                 restaurant_products[item.restaurant].append(item.product)
         for order in self:
-            products = [order_elements.product for order_elements in order.orders.all()]
+            products = [order_elements.product for order_elements in order.elements.all()]
             available_restaurants = []
             for restaurant, menu in restaurant_products.items():
                 if set(products).issubset(menu):
@@ -154,7 +154,7 @@ class CustomerQuerySet(models.QuerySet):
         return self
 
 
-class Customer(models.Model):
+class Order(models.Model):
     STATUS_CHOICES = [
         ('Не обработан', 'Не обработан'),
         ('Готовится', 'Готовится'),
@@ -190,12 +190,12 @@ class Customer(models.Model):
         Restaurant,
         verbose_name='ресторан',
         on_delete=models.CASCADE,
-        related_name='customers',
+        related_name='orders',
         blank=True,
         null=True
     )
 
-    objects = CustomerQuerySet.as_manager()
+    objects = OrderQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'заказ'
@@ -205,19 +205,19 @@ class Customer(models.Model):
         return f"{self.firstname} {self.lastname} - {self.address}"
 
 
-class Order(models.Model):
+class OrderElement(models.Model):
     product = models.ForeignKey(
         Product,
         verbose_name='товар',
         on_delete=models.CASCADE,
-        related_name='orders',
+        related_name='elements',
     )
     quantity = models.IntegerField('количество', validators=[MinValueValidator(1)])
-    customer = models.ForeignKey(
-        Customer,
+    order = models.ForeignKey(
+        Order,
         verbose_name='заказчик',
         on_delete=models.CASCADE,
-        related_name='orders',
+        related_name='elements',
     )
     price = models.DecimalField('цена товара', max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
 

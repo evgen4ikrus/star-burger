@@ -29,7 +29,7 @@
       <tr>
         <td>{{ item.id }}</td>
         <td>{{ item.order_status }}</td>
-        <td>{{ item.payment_method }}</td>
+        <td>{% if item.payment_method %}{{ item.payment_method }}{% else %}Уточнить у заказчика{% endif %}</td>
         <td>{{ item.total_price }} руб.</td>
         <td>{{ item.firstname }} {{item.lastname}}</td>
         <td>{{ item.phonenumber }}</td>
@@ -51,7 +51,7 @@
         {% else %}
           <td>Ни один из ресторанов не может приготовить</td>
         {% endif %}
-        <td><a href='{% url "admin:foodcartapp_customer_change" object_id=item.id %}?next={{ request.path|urlencode }}'>Редактировать</a></td>
+        <td><a href='{% url "admin:foodcartapp_order_change" object_id=item.id %}?next={{ request.path|urlencode }}'>Редактировать</a></td>
       </tr>
     {% endfor %}
    </table>
