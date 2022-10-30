@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import F, Sum
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
+from collections import defaultdict
 
 
 class Restaurant(models.Model):
@@ -138,12 +139,10 @@ class OrderQuerySet(models.QuerySet):
     def add_available_restaurants(self):
         restaurant_menu_items = RestaurantMenuItem.objects.filter(availability=True)\
             .select_related('restaurant').select_related('product')
-        restaurant_products = {}
+        restaurant_products = defaultdict(set)
         for item in restaurant_menu_items:
-            if item.restaurant not in restaurant_products:
-                restaurant_products[item.restaurant] = [item.product]
-            else:
-                restaurant_products[item.restaurant].append(item.product)
+            restaurant_products[item.restaurant].add(item.product)
+        print(restaurant_products)
         for order in self:
             products = [order_elements.product for order_elements in order.elements.all()]
             available_restaurants = []
