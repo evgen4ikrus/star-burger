@@ -13,7 +13,7 @@ def change_status(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('foodcartapp', '0053_auto_20221018_2030'),
+        ('foodcartapp', '0052_alter_customer_order_status'),
     ]
 
     operations = [

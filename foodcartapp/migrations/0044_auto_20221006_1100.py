@@ -5,7 +5,7 @@ from django.db import migrations
 
 def change_status(apps, schema_editor):
     Customer = apps.get_model('foodcartapp', 'Customer')
-    for customer in Customer.objects.filter(order_status='Необработано'):
+    for customer in Customer.objects.filter(order_status='0'):
         customer.order_status = 'Необработан'
         customer.save()
 
@@ -13,7 +13,7 @@ def change_status(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('foodcartapp', '0043_auto_20221006_1050'),
+        ('foodcartapp', '0042_alter_customer_order_status'),
     ]
 
     operations = [
