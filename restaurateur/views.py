@@ -14,7 +14,7 @@ from requests import exceptions
 
 from foodcartapp.models import Order, Product, Restaurant
 from places.models import Place
-from star_burger.settings import YANDEX_API_KEY
+from django.conf import settings
 
 
 def fetch_coordinates(apikey, address):
@@ -147,17 +147,17 @@ def view_orders(request):
         .prefetch_related('elements__product')\
         .order_by('-order_status', 'registered_at')\
         .add_available_restaurants()
-    update_places(order_items, YANDEX_API_KEY)
+    update_places(order_items, settings.YANDEX_API_KEY)
     restaurants = Restaurant.objects.all()
-    update_places(restaurants, YANDEX_API_KEY)
+    update_places(restaurants, settings.YANDEX_API_KEY)
 
     for order in order_items:
-        delivery_coordinates = get_coordinates(order.address, YANDEX_API_KEY)
+        delivery_coordinates = get_coordinates(order.address, settings.YANDEX_API_KEY)
         if not delivery_coordinates:
             continue
         order.restaurants_with_distance = {}
         for restaurant in order.restaurants:
-            restaurant_coordinates = get_coordinates(restaurant.address, YANDEX_API_KEY)
+            restaurant_coordinates = get_coordinates(restaurant.address, settings.YANDEX_API_KEY)
             if not restaurant_coordinates:
                 continue
             restaurant.distance = round(distance.distance(delivery_coordinates, restaurant_coordinates).km, 1)
