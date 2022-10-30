@@ -1,5 +1,4 @@
 from django import forms
-from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import user_passes_test
@@ -9,7 +8,7 @@ from django.views import View
 from geopy import distance
 
 from foodcartapp.models import Order, Product, Restaurant
-from places.views import get_coordinates, update_places
+from places.views import get_addresses_coordinates
 
 
 class Login(forms.Form):
@@ -99,17 +98,16 @@ def view_orders(request):
         .prefetch_related('elements__product')\
         .order_by('-order_status', 'registered_at')\
         .add_available_restaurants()
-    update_places(order_items, settings.YANDEX_API_KEY)
-    restaurants = Restaurant.objects.all()
-    update_places(restaurants, settings.YANDEX_API_KEY)
-
+    orders_coordinates = get_addresses_coordinates([order.address for order in order_items])
+    restaurants_coordinates = get_addresses_coordinates([restaurant.address for restaurant in Restaurant.objects.all()])
+    print(orders_coordinates)
     for order in order_items:
-        delivery_coordinates = get_coordinates(order.address, settings.YANDEX_API_KEY)
+        delivery_coordinates = orders_coordinates.get(order.address)
         if not delivery_coordinates:
             continue
         order.restaurants_with_distance = {}
         for restaurant in order.restaurants:
-            restaurant_coordinates = get_coordinates(restaurant.address, settings.YANDEX_API_KEY)
+            restaurant_coordinates = restaurants_coordinates[restaurant.address]
             if not restaurant_coordinates:
                 continue
             restaurant.distance = round(distance.distance(delivery_coordinates, restaurant_coordinates).km, 1)

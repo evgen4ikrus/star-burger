@@ -2,6 +2,7 @@ import requests
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from requests import exceptions
+from django.conf import settings
 
 from .models import Place
 
@@ -24,27 +25,27 @@ def fetch_coordinates(apikey, address):
     return lat, lon
 
 
-def update_places(places, yandex_api_key):
-    addresses = [place.address for place in Place.objects.all()]
-    for item in places:
-        if item.address in addresses:
+def get_addresses_coordinates(addresses):
+    places = Place.objects.filter(address__in=addresses)
+    places_addresses = [place.address for place in places]
+    addresses_coordinates = {}
+    for address in addresses:
+        if address in places_addresses:
             continue
         try:
-            latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
+            latitude, longitude = fetch_coordinates(settings.YANDEX_API_KEY, address)
         except exceptions.ConnectionError:
-            return None
+            continue
         if latitude and longitude:
             Place.objects.create(
-                address=item.address,
+                address=address,
                 longitude=longitude,
                 latitude=latitude,
                 update_date=timezone.now()
             )
+    for place in places:
+        if place.address in addresses_coordinates:
+            continue
+        addresses_coordinates[place.address] = (place.latitude, place.longitude)
+    return addresses_coordinates
 
-
-def get_coordinates(address, yandex_api_key):
-    try:
-        place = Place.objects.get(address=address)
-    except ObjectDoesNotExist:
-        return None, None
-    return place.latitude, place.longitude

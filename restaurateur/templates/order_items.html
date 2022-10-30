@@ -39,14 +39,18 @@
           <td>{{ item.cooking_restaurant }}</td>
         {% elif item.restaurants %}
           <td>
-            <details>
-              <summary>Может быть приготовлен ресторанами:</summary>
-              <ul>
-                {% for restaurant, distance in item.restaurants_with_distance.items %}
-                  <li>{{ restaurant }} {% if distance %}- {{ distance }} км.{% endif %}</li>
-                {% endfor %}
-              </ul>
-            </details>
+            {% if item.restaurants_with_distance %}
+              <details>
+                <summary>Может быть приготовлен ресторанами:</summary>
+                <ul>
+                  {% for restaurant, distance in item.restaurants_with_distance.items %}
+                    <li>{{ restaurant }} {% if distance %}- {{ distance }} км.{% endif %}</li>
+                  {% endfor %}
+                </ul>
+              </details>
+            {% else %}
+              Не загрузились данные, попробуйте обновить страницу
+            {% endif %}
           </td>
         {% else %}
           <td>Ни один из ресторанов не может приготовить</td>
