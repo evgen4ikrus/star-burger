@@ -186,9 +186,9 @@ class Order(models.Model):
         null=True,
         db_index=True
     )
-    restaurant = models.ForeignKey(
+    cooking_restaurant = models.ForeignKey(
         Restaurant,
-        verbose_name='ресторан',
+        verbose_name='готовящий ресторан',
         on_delete=models.CASCADE,
         related_name='orders',
         blank=True,
