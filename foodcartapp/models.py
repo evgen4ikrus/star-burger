@@ -142,7 +142,6 @@ class OrderQuerySet(models.QuerySet):
         restaurant_products = defaultdict(set)
         for item in restaurant_menu_items:
             restaurant_products[item.restaurant].add(item.product)
-        print(restaurant_products)
         for order in self:
             products = [order_elements.product for order_elements in order.elements.all()]
             available_restaurants = []
