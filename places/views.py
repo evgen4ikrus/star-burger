@@ -1,8 +1,7 @@
 import requests
-from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
 from django.utils import timezone
 from requests import exceptions
-from django.conf import settings
 
 from .models import Place
 
@@ -48,4 +47,3 @@ def get_addresses_coordinates(addresses):
             continue
         addresses_coordinates[place.address] = (place.latitude, place.longitude)
     return addresses_coordinates
-
