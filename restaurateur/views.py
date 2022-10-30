@@ -1,38 +1,15 @@
-import requests
 from django import forms
+from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import user_passes_test
-from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.utils import timezone
 from django.views import View
 from geopy import distance
-from requests import exceptions
-
 
 from foodcartapp.models import Order, Product, Restaurant
-from places.models import Place
-from django.conf import settings
-
-
-def fetch_coordinates(apikey, address):
-    base_url = "https://geocode-maps.yandex.ru/1.x"
-    response = requests.get(base_url, params={
-        "geocode": address,
-        "apikey": apikey,
-        "format": "json",
-    })
-    response.raise_for_status()
-    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
-
-    if not found_places:
-        return None, None
-
-    most_relevant = found_places[0]
-    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
-    return lat, lon
+from places.views import get_coordinates, update_places
 
 
 class Login(forms.Form):
@@ -112,31 +89,6 @@ def view_restaurants(request):
     return render(request, template_name="restaurants_list.html", context={
         'restaurants': Restaurant.objects.all(),
     })
-
-
-def update_places(places, yandex_api_key):
-    addresses = [place.address for place in Place.objects.all()]
-    for item in places:
-        if item.address not in addresses:
-            try:
-                latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
-            except exceptions.ConnectionError:
-                return None
-            if latitude and longitude:
-                Place.objects.create(
-                    address=item.address,
-                    longitude=longitude,
-                    latitude=latitude,
-                    update_date=timezone.now()
-                )
-
-
-def get_coordinates(address, yandex_api_key):
-    try:
-        place = Place.objects.get(address=address)
-    except ObjectDoesNotExist:
-        return None, None
-    return place.latitude, place.longitude
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
