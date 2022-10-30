@@ -1,9 +1,10 @@
+from collections import defaultdict
+
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F, Sum
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
-from collections import defaultdict
 
 
 class Restaurant(models.Model):
@@ -200,7 +201,7 @@ class Order(models.Model):
         verbose_name_plural = 'заказы'
 
     def __str__(self):
-        return f"{self.firstname} {self.lastname} - {self.address}"
+        return f'{self.firstname} {self.lastname} - {self.address}'
 
 
 class OrderElement(models.Model):
@@ -224,4 +225,4 @@ class OrderElement(models.Model):
         verbose_name_plural = 'элементы заказа'
 
     def __str__(self):
-        return self.id
+        return f'{self.product} - {self.quantity} шт.'
