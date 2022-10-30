@@ -12,4 +12,4 @@ class Place(models.Model):
         verbose_name_plural = 'места на карте'
 
     def __str__(self):
-        return f"{self.address}"
+        return self.address

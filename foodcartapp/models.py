@@ -224,4 +224,4 @@ class OrderElement(models.Model):
         verbose_name_plural = 'элементы заказа'
 
     def __str__(self):
-        return f"{self.id}"
+        return self.id
