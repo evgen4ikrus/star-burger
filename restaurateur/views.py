@@ -9,6 +9,8 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 from geopy import distance
+from requests import exceptions
+
 
 from foodcartapp.models import Order, Product, Restaurant
 from places.models import Place
@@ -116,7 +118,10 @@ def update_places(places, yandex_api_key):
     addresses = [place.address for place in Place.objects.all()]
     for item in places:
         if item.address not in addresses:
-            latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
+            try:
+                latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
+            except exceptions.ConnectionError:
+                return None
             if latitude and longitude:
                 Place.objects.create(
                     address=item.address,
