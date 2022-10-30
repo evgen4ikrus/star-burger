@@ -27,18 +27,19 @@ def fetch_coordinates(apikey, address):
 def update_places(places, yandex_api_key):
     addresses = [place.address for place in Place.objects.all()]
     for item in places:
-        if item.address not in addresses:
-            try:
-                latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
-            except exceptions.ConnectionError:
-                return None
-            if latitude and longitude:
-                Place.objects.create(
-                    address=item.address,
-                    longitude=longitude,
-                    latitude=latitude,
-                    update_date=timezone.now()
-                )
+        if item.address in addresses:
+            continue
+        try:
+            latitude, longitude = fetch_coordinates(yandex_api_key, item.address)
+        except exceptions.ConnectionError:
+            return None
+        if latitude and longitude:
+            Place.objects.create(
+                address=item.address,
+                longitude=longitude,
+                latitude=latitude,
+                update_date=timezone.now()
+            )
 
 
 def get_coordinates(address, yandex_api_key):
