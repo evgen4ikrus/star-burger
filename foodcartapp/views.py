@@ -86,7 +86,7 @@ def register_order(request):
         address=serializer.validated_data['address'],
     )
     for element in serializer.validated_data['products']:
-        product, quantity = element.values()
+        product, quantity = element['product'], element['quantity']
         order_element = OrderElement(
             order=order,
             product=product,
