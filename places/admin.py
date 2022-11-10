@@ -5,4 +5,4 @@ from .models import Place
 
 @admin.register(Place)
 class PlaceAdmin(admin.ModelAdmin):
-    list_display = ['address', 'latitude', 'longitude', 'update_date']
+    list_display = ['address', 'latitude', 'longitude', 'update_at']
