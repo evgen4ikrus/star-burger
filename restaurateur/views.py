@@ -100,7 +100,6 @@ def view_orders(request):
         .add_available_restaurants()
     orders_coordinates = get_addresses_coordinates([order.address for order in order_items])
     restaurants_coordinates = get_addresses_coordinates([restaurant.address for restaurant in Restaurant.objects.all()])
-    print(orders_coordinates)
     for order in order_items:
         delivery_coordinates = orders_coordinates.get(order.address)
         if not delivery_coordinates:
