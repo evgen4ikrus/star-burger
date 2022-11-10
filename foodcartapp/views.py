@@ -85,6 +85,7 @@ def register_order(request):
         phonenumber=serializer.validated_data['phonenumber'],
         address=serializer.validated_data['address'],
     )
+    order_elements = []
     for element in serializer.validated_data['products']:
         product, quantity = element['product'], element['quantity']
         order_element = OrderElement(
@@ -94,6 +95,7 @@ def register_order(request):
             price=product.price
         )
         order_element.full_clean()
-        order_element.save()
+        order_elements.append(order_element)
+    OrderElement.objects.bulk_create(order_elements)
     serializer = OrderSerializer(order)
     return Response(serializer.data)
