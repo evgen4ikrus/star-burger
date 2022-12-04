@@ -40,7 +40,7 @@ def get_addresses_coordinates(addresses):
                 address=address,
                 longitude=longitude,
                 latitude=latitude,
-                update_date=timezone.now()
+                update_at=timezone.now()
             )
     for place in places:
         if place.address in addresses_coordinates:
