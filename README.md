@@ -48,7 +48,6 @@ python -m venv venv
 - Windows: `.\venv\Scripts\activate`
 - MacOS/Linux: `source venv/bin/activate`
 
-
 Установите зависимости в виртуальное окружение:
 ```sh
 pip install -r requirements.txt
