@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  db:
+    image: postgres:12.0-alpine
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB-burger}
+      POSTGRES_USER: ${POSTGRES_USER-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD-12345}
+    ports:
+      - 5438:5432
+
+  frontend:
+    build: frontend
+    image: sb_frontend
+    volumes:
+      - static:/code/bundles
+    ports:
+      - 8080:8080
+    command: ./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir bundles --public-url="./"
+
+  web:
+    build: backend
+    image: sb_backend
+    volumes:
+      - ./backend:/code
+      - static:/code/bundles
+      - media:/code/media
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      YANDEX_API_KEY: ${YANDEX_API_KEY}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS-0.0.0.0}
+      DEBUG: ${DEBUG-True}
+      ROLLBAR_ACCESS_TOKEN: ${ROLLBAR_ACCESS_TOKEN}
+      ROLLBAR_ENVIRONMENT: ${ROLLBAR_ENVIRONMENT-development}
+      DATABASE_URL: ${DATABASE_URL-postgres://admin:12345@db:5432/burger}
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+      - frontend
+
+volumes:
+  db_data:
+  static:
+  media:
